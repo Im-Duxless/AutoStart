@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('questions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedSmallInteger('ticket_number');
+            $table->string('category', 2);
+            $table->text('text');
+            $table->json('options');
+            $table->unsignedTinyInteger('correct_option');
+            $table->timestamps();
+            $table->index(['category', 'ticket_number']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('questions');
+    }
+};
