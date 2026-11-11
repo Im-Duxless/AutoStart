@@ -19,7 +19,7 @@ export class ApiError extends Error {
 }
 
 export async function api(path, { method = 'GET', params = {}, body, authorized = true } = {}) {
-  const url = new URL(baseUrl + path)
+  const url = new URL(baseUrl + path, window.location.origin)
   for (const [key, value] of Object.entries(params)) {
     if (value !== '' && value !== null && value !== undefined) {
       url.searchParams.set(key, typeof value === 'boolean' ? Number(value) : value)

@@ -1,6 +1,31 @@
 # AutoStart
 
-AutoStart ведёт набор в группы автошколы, расписание теории и вождения, тренажёр ПДД и учёт платежей. Vue-клиент и Laravel REST API запускаются на разных портах из одного репозитория.
+AutoStart ведёт набор в группы автошколы, расписание теории и вождения, тренажёр ПДД и учёт платежей. Vue-клиент и Laravel REST API находятся в одном репозитории. При отдельном запуске для разработки они используют разные порты.
+
+## Запуск через OSPanel
+
+На этом компьютере проект зарегистрирован в OSPanel как `autoschool.loc`. В меню OSPanel выберите `autoschool.loc` → «Включить модули проекта», затем «Открыть в браузере». Apache раздаёт сборку Vue и передаёт запросы `/api/*` Laravel. Для открытия сайта достаточно Apache, PHP 8.3 и MySQL 8.0 из OSPanel. [Открыть AutoStart через OSPanel](http://autoschool.loc/)
+
+Файл `C:\OSPanel\home\autoschool.loc\.osp\project.ini` указывает на рабочую папку этого репозитория. Команда `osp project autoschool.loc` в консоли OSPanel открывает её. Для коллекции Postman задайте `base_url=http://autoschool.loc/api`.
+
+После изменения интерфейса пересоберите его из корня проекта.
+
+```powershell
+npm.cmd --prefix client run build:ospanel
+```
+
+Для настройки на другом компьютере поместите проект в каталог `home/autoschool.loc` OSPanel 6.5 и создайте в нём файл `.osp/project.ini`.
+
+```ini
+[autoschool.loc]
+http_engine = Apache
+php_engine = PHP-8.3
+environment = MySQL-8.0
+web_root = {project_root}\public
+tls_enabled = off
+```
+
+Перезапустите OSPanel, включите модули проекта и настройте `.env` на схему MySQL 8.0. На текущем компьютере база `autostart` находится на `127.0.1.30:3306`. Для новой базы установите зависимости Laravel и Vue, создайте ключ приложения, выполните `php artisan migrate --seed` и соберите клиент командой выше. В `.env` задайте `APP_URL=http://autoschool.loc`. [Документация Open Server Panel](https://github.com/OSPanel/OpenServerPanel/wiki#creating-projects)
 
 ## Что установить
 
@@ -36,9 +61,9 @@ if (-not (Test-Path -LiteralPath '.env')) {
 }
 ```
 
-Если файл `.env` уже настроен, используйте его. Проверьте `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` и `DB_PASSWORD`. В чистом окружении порт по умолчанию в примере равен `3306`. Для проверки на текущем компьютере использован отдельный экземпляр MySQL на `127.0.0.1:3308` с данными в `work/mysql-data`.
+Если файл `.env` уже настроен, используйте его. Проверьте `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` и `DB_PASSWORD`. В чистом окружении порт по умолчанию в примере равен `3306`. Текущий `.env` подключается к базе OSPanel на `127.0.1.30:3306`. Исходная локальная база на порту `3308` сохранена в `work/mysql-data`.
 
-Чтобы снова запустить этот экземпляр с уже заполненной базой, выполните команду в корне проекта при свободном порте 3308.
+Чтобы открыть исходную базу на отдельном экземпляре MySQL, выполните команду в корне проекта при свободном порте 3308.
 
 ```powershell
 & 'C:\OSPanel\modules\MySQL-8.4\bin\mysqld.exe' --no-defaults --basedir=C:/OSPanel/modules/MySQL-8.4 `

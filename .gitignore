@@ -23,6 +23,7 @@
 /vendor
 /client/node_modules
 /client/dist
+/public/client/
 /client/.env.local
 /work/
 /outputs/

@@ -18,6 +18,12 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # Страницы Vue открываются напрямую после сборки для OSPanel.
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{DOCUMENT_ROOT}/client/index.html -f
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(?!api(?:/|$)|up(?:/|$)|client(?:/|$)|\.).*$ client/index.html [END]
+
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
