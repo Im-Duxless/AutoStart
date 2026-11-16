@@ -75,7 +75,9 @@ CREATE TABLE `payments` (
   `comment` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `demo_reference` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `payments_user_id_demo_reference_unique` (`user_id`,`demo_reference`),
   KEY `payments_payment_date_status_index` (`payment_date`,`status`),
   KEY `payments_user_id_payment_date_index` (`user_id`,`payment_date`),
   CONSTRAINT `payments_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT

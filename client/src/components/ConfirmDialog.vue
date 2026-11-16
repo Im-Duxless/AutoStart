@@ -1,9 +1,10 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { nextTick, ref, useId, watch } from 'vue'
 
 const props = defineProps({ open: Boolean, title: String, text: String, label: String, danger: Boolean, busy: Boolean })
 const emit = defineEmits(['close', 'confirm'])
 const dialog = ref(null)
+const titleId = useId()
 
 watch(() => props.open, async show => {
   await nextTick()
@@ -13,8 +14,8 @@ watch(() => props.open, async show => {
 </script>
 
 <template>
-  <dialog ref="dialog" class="confirm-dialog" aria-labelledby="confirm-title" @cancel.prevent="!busy && emit('close')">
-    <h2 id="confirm-title">{{ title }}</h2>
+  <dialog ref="dialog" class="confirm-dialog" :aria-labelledby="titleId" @cancel.prevent="!busy && emit('close')">
+    <h2 :id="titleId">{{ title }}</h2>
     <p v-if="text">{{ text }}</p>
     <div class="dialog-actions">
       <button autofocus type="button" class="btn btn-outline-primary" :disabled="busy" @click="emit('close')">Назад</button>

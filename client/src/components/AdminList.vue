@@ -81,6 +81,7 @@ onMounted(() => Promise.all([load(), loadFilterOptions()]))
   <ErrorNotice :error="lookupError" />
   <button v-if="lookupError" type="button" class="btn btn-outline-primary mb-3" @click="loadFilterOptions">Загрузить фильтры</button>
   <p v-if="success" class="alert alert-success" role="status">{{ success }}</p>
+  <slot name="notices" />
   <AdminRecordForm v-if="editor" :key="editor.id || 'new'" :config="config" :record-id="editor.id" @close="editor = null" @saved="saved" />
   <section class="surface">
     <FilterBar v-model="filters" :fields="fields" :busy="loading" @apply="load()" @reset="reset" />
@@ -105,11 +106,12 @@ onMounted(() => Promise.all([load(), loadFilterOptions()]))
         <tbody>
           <tr v-for="row in rows" :key="row.id">
             <td v-for="column in config.columns" :key="column.key">
-              <StatusBadge v-if="column.badge" :value="row[column.key]" />
+              <StatusBadge v-if="column.badge" :value="row[column.key]" :label="column.value?.(row)" />
               <template v-else>{{ (column.value ? column.value(row) : row[column.key]) ?? '—' }}</template>
             </td>
             <td>
               <div class="row-actions">
+                <slot name="row-actions" :row="row" :reload="reload" />
                 <RouterLink v-if="config.path === '/lessons'" class="btn btn-outline-primary btn-sm" :to="{ name: 'lesson', params: { id: row.id } }">Открыть</RouterLink>
                 <button v-if="!config.canEdit || config.canEdit(row)" type="button" class="btn btn-outline-primary btn-sm"
                   :aria-label="'Редактировать ' + config.itemName(row)" @click="open(row.id)"><i class="bi bi-pencil" aria-hidden="true"></i></button>

@@ -1,9 +1,9 @@
-import { carName, date, lessonTypes, money, options, paymentMethods, roles, statuses, time, today } from '../services/format.js'
+import { carName, date, lessonTypes, money, options, paymentMethods, paymentStatuses, roles, statuses, time, today } from '../services/format.js'
 
 export const categories = options({ A: 'A · Мотоциклы', B: 'B · Легковые', C: 'C · Грузовые' })
 const groupStatuses = options({ open: statuses.open, in_progress: statuses.in_progress, closed: statuses.closed })
 const lessonStatuses = options({ scheduled: statuses.scheduled, free: statuses.free, booked: statuses.booked, completed: statuses.completed, cancelled: statuses.cancelled })
-const paymentStatuses = options({ received: statuses.received, void: statuses.void })
+const manualPaymentStatuses = options({ received: statuses.received, void: statuses.void })
 const categoryFilter = { key: 'category', label: 'Категория', options: categories }
 const dateFilters = [{ key: 'from', label: 'Дата с', type: 'date' }, { key: 'to', label: 'Дата по', type: 'date' }]
 const categoryField = { key: 'category', label: 'Категория', options: categories, required: true }
@@ -113,28 +113,30 @@ export const adminTables = {
     ],
   },
   payments: {
-    title: 'Платежи', description: 'Учтённые взносы курсантов за выбранный период.',
+    title: 'Платежи', description: 'Взносы курсантов и заявки на оплату наличными.',
     path: '/payments', create: 'Внести платёж', itemName: row => row.student?.name + ' · ' + money(row.amount),
     filters: [
       { key: 'search', label: 'Поиск платежа', placeholder: 'Курсант или комментарий' },
       { key: 'user_id', label: 'Курсант', lookup: 'students' },
       { key: 'payment_method', label: 'Способ', options: options(paymentMethods) },
-      { key: 'status', label: 'Статус', options: paymentStatuses }, ...dateFilters,
+      { key: 'status', label: 'Статус', options: options(paymentStatuses) }, ...dateFilters,
     ],
     columns: [
       { key: 'payment_date', label: 'Дата', sort: true, value: row => date(row.payment_date) },
       { key: 'student', label: 'Курсант', value: row => row.student?.name },
       { key: 'amount', label: 'Сумма', sort: true, value: row => money(row.amount) },
-      { key: 'payment_method', label: 'Способ', sort: true, value: row => paymentMethods[row.payment_method] },
-      { key: 'status', label: 'Статус', sort: true, badge: true },
+      { key: 'payment_method', label: 'Способ', sort: true, value: row => paymentMethods[row.payment_method] + (row.is_demo ? ' · Демо' : '') },
+      { key: 'status', label: 'Статус', sort: true, badge: true, value: row => paymentStatuses[row.status] },
     ],
     fields: [
       { key: 'user_id', label: 'Курсант', lookup: 'students', required: true },
       { key: 'amount', label: 'Сумма', type: 'number', min: 0.01, max: 99999999.99, step: '0.01', required: true },
       { key: 'payment_date', label: 'Дата платежа', type: 'date', required: true, default: today, max: today },
       { key: 'payment_method', label: 'Способ оплаты', options: options(paymentMethods), required: true },
-      { key: 'status', label: 'Статус', options: paymentStatuses, required: true, default: 'received' },
+      { key: 'status', label: 'Статус', options: manualPaymentStatuses, required: true, default: 'received' },
       { key: 'comment', label: 'Комментарий', type: 'textarea', wide: true, maxlength: 500 },
     ],
+    canEdit: row => !row.is_demo,
+    canDelete: row => !row.is_demo,
   },
 }

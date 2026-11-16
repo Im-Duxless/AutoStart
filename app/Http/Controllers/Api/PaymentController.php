@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Enums\UserRole;
 use App\Exceptions\BusinessException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DemoPaymentRequest;
 use App\Http\Requests\ListRequest;
 use App\Http\Requests\PaymentRequest;
 use App\Http\Resources\PaymentResource;
 use App\Models\Payment;
-use App\Models\User;
+use App\Services\PaymentService;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +23,8 @@ use Illuminate\Support\Facades\Gate;
 
 class PaymentController extends Controller
 {
+    public function __construct(private PaymentService $payments) {}
+
     public function index(ListRequest $request): AnonymousResourceCollection
     {
         $query = Payment::with('user')
@@ -57,7 +60,10 @@ class PaymentController extends Controller
     {
         $payment = DB::transaction(function () use ($request) {
             $data = $request->validated();
-            $this->checkStudent($data['user_id']);
+            $student = $this->payments->lockStudent($data['user_id']);
+            if (($data['status'] ?? 'received') === 'received') {
+                $this->payments->protectPendingCash($student, BigDecimal::of((string) $data['amount']));
+            }
 
             return Payment::create($data)->refresh();
         }, 5);
@@ -69,8 +75,16 @@ class PaymentController extends Controller
     {
         $updated = DB::transaction(function () use ($request, $payment) {
             $payment = Payment::query()->lockForUpdate()->findOrFail($payment->id);
+            $this->ensureManualPayment($payment);
             $data = $request->validated();
-            $this->checkStudent($data['user_id'] ?? $payment->user_id);
+            $student = $this->payments->lockStudent($data['user_id'] ?? $payment->user_id);
+            if (($data['status'] ?? $payment->status) === 'received') {
+                $additional = BigDecimal::of((string) ($data['amount'] ?? $payment->amount));
+                if ($payment->user_id === $student->id && $payment->status === 'received') {
+                    $additional = $additional->minus($payment->amount);
+                }
+                $this->payments->protectPendingCash($student, $additional);
+            }
             $payment->update($data);
 
             return $payment;
@@ -81,6 +95,7 @@ class PaymentController extends Controller
 
     public function destroy(Payment $payment): Response
     {
+        $this->ensureManualPayment($payment);
         $payment->delete();
 
         return response()->noContent();
@@ -88,31 +103,35 @@ class PaymentController extends Controller
 
     public function balance(Request $request): JsonResponse
     {
-        $student = $request->user();
-        $groups = $student->approvedGroups()->get(['study_groups.id', 'name', 'tuition']);
-        $paid = BigDecimal::of((string) $student->payments()->where('status', 'received')->sum('amount'))->toScale(2, RoundingMode::HalfUp);
-        $tuition = null;
-        $due = null;
-        if ($groups->isNotEmpty() && ! $groups->contains(fn ($group) => $group->tuition === null)) {
-            $tuition = BigDecimal::of('0.00');
-            foreach ($groups as $group) {
-                $tuition = $tuition->plus($group->tuition);
-            }
-            $due = BigDecimal::max('0.00', $tuition->minus($paid));
-        }
-
-        return response()->json(['data' => [
-            'paid' => (string) $paid,
-            'tuition' => $tuition === null ? null : (string) $tuition,
-            'due' => $due === null ? null : (string) $due,
-        ]]);
+        return response()->json(['data' => $this->payments->balance($request->user())]);
     }
 
-    private function checkStudent(int $id): void
+    public function checkout(DemoPaymentRequest $request): PaymentResource
     {
-        $student = User::query()->lockForUpdate()->find($id);
-        if ($student?->role !== UserRole::Student) {
-            throw new BusinessException('Платёж можно учесть только для курсанта.');
+        $payment = $this->payments->checkout($request->user()->id, $request->validated());
+
+        return new PaymentResource($payment->load('user'));
+    }
+
+    public function confirm(Payment $payment): PaymentResource
+    {
+        $updated = $this->payments->decideCashPayment($payment, 'received');
+
+        return new PaymentResource($updated->load('user'));
+    }
+
+    public function cancel(Payment $payment): PaymentResource
+    {
+        Gate::authorize('view', $payment);
+        $updated = $this->payments->decideCashPayment($payment, 'void');
+
+        return new PaymentResource($updated->load('user'));
+    }
+
+    private function ensureManualPayment(Payment $payment): void
+    {
+        if ($payment->demo_reference !== null) {
+            throw new BusinessException('Демо-платёж защищён от ручного изменения. Для открытой заявки используйте подтверждение или отмену.');
         }
     }
 }

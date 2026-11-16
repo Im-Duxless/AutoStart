@@ -10,7 +10,7 @@ AutoStart использует семь основных моделей Eloquent
 | `Car` | `cars` | `brand`, `model`, `plate_number`, `category`, `is_active` | `lessons` hasMany |
 | `Question` | `questions` | `category`, `ticket_number`, `text`, `options`, `correct_option` | Вопросы одного билета выбираются по паре категория и номер |
 | `ExamAttempt` | `exam_attempts` | `user_id`, `category`, `ticket_number`, `answers`, `total_questions`, `correct_answers`, `passed` | `user` belongsTo |
-| `Payment` | `payments` | `user_id`, `amount`, `payment_date`, `payment_method`, `status`, `comment` | `user` belongsTo |
+| `Payment` | `payments` | `user_id`, `amount`, `payment_date`, `payment_method`, `status`, `comment`, `demo_reference` | `user` belongsTo |
 | Промежуточная таблица | `study_group_user` | `user_id`, `study_group_id`, `status`, даты | Соединяет `User` и `StudyGroup` |
 
 Каждая основная таблица имеет первичный ключ `id` типа `BIGINT UNSIGNED` и поля времени создания и изменения. Внешние ключи имеют тот же тип. Миграции задают длину строк, значения по умолчанию и точные индексы.
@@ -99,6 +99,7 @@ erDiagram
         varchar payment_method
         varchar status
         varchar comment
+        uuid demo_reference
     }
 ```
 

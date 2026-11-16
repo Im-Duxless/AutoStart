@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('exams/history', [ExamController::class, 'history'])->name('exams.history');
         Route::get('exams/history/{exam_attempt}', [ExamController::class, 'show'])->name('exams.show');
         Route::apiResource('payments', PaymentController::class)->only(['index']);
+        Route::post('payments/{payment}/cancel', [PaymentController::class, 'cancel'])->name('payments.cancel');
     });
 
     Route::middleware('role:student')->group(function () {
@@ -47,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('tickets/{number}', [ExamController::class, 'ticket'])->whereNumber('number')->name('tickets.show');
         Route::post('exams/submit', [ExamController::class, 'submit'])->name('exams.submit');
         Route::get('payments/balance', [PaymentController::class, 'balance'])->name('payments.balance');
+        Route::post('payments/demo', [PaymentController::class, 'checkout'])->name('payments.demo');
     });
 
     Route::get('payments/{payment}', [PaymentController::class, 'show'])->middleware('role:student,admin')->name('payments.show');
@@ -64,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('lessons', LessonController::class)->only(['destroy']);
         Route::apiResource('questions', QuestionController::class);
         Route::apiResource('payments', PaymentController::class)->except(['index', 'show']);
+        Route::post('payments/{payment}/confirm', [PaymentController::class, 'confirm'])->name('payments.confirm');
         Route::post('enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
         Route::patch('enrollments/{enrollment}', [EnrollmentController::class, 'update'])->whereNumber('enrollment')->name('enrollments.update');
         Route::get('reports/summary', [ReportController::class, 'summary'])->name('reports.summary');

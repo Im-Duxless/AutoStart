@@ -28,7 +28,10 @@
 | POST `/exams/submit` | ExamController.submit | Курсант | 201, `category,ticket_number,version,answers` |
 | GET `/exams/history` | ExamController.history | Курсант, администратор | 200, список попыток |
 | GET `/exams/history/{id}` | ExamController.show | Курсант-владелец, администратор | 200, попытка и разбор ответов |
-| GET `/payments/balance` | PaymentController.balance | Курсант | 200, `paid,tuition,due` |
+| GET `/payments/balance` | PaymentController.balance | Курсант | 200, `paid,tuition,due,pending,available` |
+| POST `/payments/demo` | PaymentController.checkout | Курсант | 201, `amount,payment_method,reference`. Способ `card` или `cash`, идентификатор запроса UUID v4 |
+| POST `/payments/{id}/confirm` | PaymentController.confirm | Администратор | 200, подтверждение заявки на наличные |
+| POST `/payments/{id}/cancel` | PaymentController.cancel | Курсант-владелец, администратор | 200, отмена заявки на наличные |
 | GET `/reports/summary` | ReportController.summary | Администратор | 200, сводка по школе |
 | GET `/reports/instructors` | ReportController.instructors | Администратор | 200, часы и число завершённых занятий. Период через `from,to` |
 
@@ -62,7 +65,9 @@ GET возвращает 200. POST создания возвращает 201, PA
 | `exams/history` | `search,category,ticket_number,passed` |
 | `payments` | `search,user_id,payment_method,status,from,to`. Ответ включает `received_total` для фильтра |
 
-Календарные даты передаются как `YYYY-MM-DD`, начало и окончание занятия как `YYYY-MM-DDTHH:mm` во времени школы или ISO 8601 с явным смещением. Логические фильтры в строке запроса принимают `1` и `0`. Платежи имеют способы `cash`, `transfer`, `card` и статусы `received`, `void`. В остатке учитываются полученные платежи и суммарная стоимость зачисленных групп. При неизвестной стоимости хотя бы одной из таких групп сумма к оплате возвращается как `null`.
+Календарные даты передаются как `YYYY-MM-DD`, начало и окончание занятия как `YYYY-MM-DDTHH:mm` во времени школы или ISO 8601 с явным смещением. Логические фильтры в строке запроса принимают `1` и `0`. Платежи имеют способы `cash`, `transfer`, `card` и статусы `received`, `pending`, `void`. Статус `pending` используется для ожидающих заявок на наличные. Такие заявки уменьшают доступную к оплате сумму `available`. Остаток `due` уменьшается после перехода платежа в `received`. При неизвестной стоимости обучения `due` и `available` равны `null`.
+
+Запись о демо-операции имеет `is_demo: true`. Повтор `POST /payments/demo` с тем же идентификатором, способом и суммой возвращает ранее созданную запись с кодом 200. Демо-операции с картой сразу получают статус `received`. Заявки на наличные переходят в `received` после подтверждения или в `void` после отмены.
 
 Список ресурсов возвращает `data`, `links`, `meta`. Ошибка валидации содержит `message` и `errors` по полям. Бизнес-конфликт содержит `message` с причиной. Ответ входа и регистрации содержит `data`, `token` и `token_type`.
 

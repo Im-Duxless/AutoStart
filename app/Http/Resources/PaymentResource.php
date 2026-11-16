@@ -18,6 +18,7 @@ class PaymentResource extends JsonResource
             'payment_method' => $this->payment_method,
             'status' => $this->status,
             'comment' => $this->comment,
+            'is_demo' => $this->demo_reference !== null,
         ];
     }
 }

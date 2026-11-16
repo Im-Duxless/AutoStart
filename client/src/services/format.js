@@ -9,6 +9,7 @@ export const statuses = {
 }
 export const lessonTypes = { theory: 'Теория', driving: 'Вождение' }
 export const paymentMethods = { cash: 'Наличные', transfer: 'Перевод', card: 'Карта' }
+export const paymentStatuses = { pending: 'Ожидает подтверждения', received: statuses.received, void: statuses.void }
 
 export function options(labels) {
   return Object.entries(labels).map(([value, label]) => ({ value, label }))

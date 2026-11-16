@@ -12,9 +12,10 @@ class Payment extends Model
 
     public const METHODS = ['cash', 'transfer', 'card'];
 
-    public const STATUSES = ['received', 'void'];
+    public const MANUAL_STATUSES = ['received', 'void'];
+    public const STATUSES = ['pending', ...self::MANUAL_STATUSES];
 
-    protected $fillable = ['user_id', 'amount', 'payment_date', 'payment_method', 'status', 'comment'];
+    protected $fillable = ['user_id', 'amount', 'payment_date', 'payment_method', 'status', 'comment', 'demo_reference'];
 
     protected function casts(): array
     {
