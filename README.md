@@ -208,3 +208,4 @@ Remove-Item Env:DB_CONNECTION, Env:DB_DATABASE
 - [Маршруты и параметры API](docs/api.md)
 - [Правила записи на вождение](docs/booking.md)
 - [Коллекция Postman](docs/AutoStart.postman_collection.json)
+- [Руководство курсанта, инструктора и администратора](docs/user-guide.md)
